@@ -49,6 +49,8 @@ HardwareSerial gpsSerial(2);
 
 TinyGPSPlus gps;
 
+bool firstSatellite = true;
+
 void setup(){
   // Serial Monitor
   Serial.begin(9600);
@@ -66,10 +68,8 @@ void setup(){
   Serial.println(h);
   //expecting 128 x 160
 
-  // Set TFT_LED to output DAC and start in 255
+  // Set TFT_LED to output DAC and start in 255. It controls the brightness of the TFT display.
   dacWrite(TFT_LED, 255);
-  // pinMode(TFT_RST, OUTPUT);
-  // digitalWrite(TFT_RST, LOW);
 }
 
 /**
@@ -89,9 +89,18 @@ ST7735_ORANGE ST77XX_ORANGE
 
 
 void loop(){
+  if(firstSatellite) {
+    tft.fillScreen(ST77XX_BLACK);
+    tft.setTextColor(ST77XX_WHITE, ST77XX_BLACK); // Setting background collor clear the previous text
+    tft.setTextSize(0);
+    tft.setCursor(5, 5);
+  }
   while (gpsSerial.available() > 0){
     // get the byte data from the GPS
     char gpsData = gpsSerial.read();
+    if(firstSatellite) {
+      tft.print(gpsData);
+    }
     Serial.print(gpsData);
     gps.encode(gpsData);
     if (gps.location.isUpdated()) {
@@ -111,7 +120,10 @@ void loop(){
       Serial.println(String(gps.date.year()) + "/" + String(gps.date.month()) + "/" + String(gps.date.day()) + "," + String(gps.time.hour()) + ":" + String(gps.time.minute()) + ":" + String(gps.time.second()));
       Serial.println("");
       // a single pixel
-      //tft.fillScreen(ST77XX_BLACK);   
+      if(firstSatellite) {
+        firstSatellite = false;
+        tft.fillScreen(ST77XX_BLACK);   
+      }
       tft.setTextColor(ST77XX_YELLOW, ST77XX_BLACK); // Setting background collor clear the previous text
       tft.setTextSize(1);
       tft.setCursor(5, 5);
@@ -142,7 +154,9 @@ void loop(){
   }
   delay(1000);
   Serial.println("-------------------------------");
-
+  if(firstSatellite) {
+    tft.println("-------------------------------");
+  }
   
 
 
